@@ -20,19 +20,22 @@ float a_data_X;
 float a_data_Y;
 float a_data_Z;
 
+float t;
+
 void setup() {
   // put your setup code here, to run once:
   Wire.begin();
 
   Serial.begin(115200);
-
+  #include <SPI.h>
+#include <SD.h>
   Serial.println(SD.begin());
   accAFile = SD.open("/accAData.csv", FILE_WRITE);
   accTFile = SD.open("/accTData.csv", FILE_WRITE);
   
   Serial.println(accelT.init(SCALE_2G, ODR_50));
   Serial.println(accelA.init(SCALE_2G, ODR_50));
-
+  t = 0;
   i = 0;
 }
 
@@ -41,12 +44,15 @@ void loop() {
   
   bool newT = false;
   bool newA = false;
+  
   if (accelT.available()){
     accelT.read();
     t_data_X = accelT.cx;
     t_data_Y = accelT.cy;
     t_data_Z = accelT.cz;
     newT = true;
+//    Serial.println(millis()-t);
+//    t = millis();
   }
   if (accelA.available()){
     accelA.read();
@@ -78,7 +84,7 @@ void loop() {
      accAFile.println(a_data_Z);
      i++;
   }
-  if (i == 50){
+  if (i == 500){
     accAFile.close();
     accTFile.close();
     Serial.println("done");
