@@ -120,13 +120,13 @@ void loop() {
       long fulldata = ((0b00000111 & (long)data_in1) << 16) + ((long)data_in2 << 8) + (long)data_in3;
       long fulldataR = ((0b00000111 & (long)data_in1r) << 16) + ((long)data_in2r << 8) + (long)data_in3r;
 
-//      Serial.println(fulldata);
+      Serial.println(fulldata);
       
-      testPPG.print(fulldata);
-      testPPG.print(",");
-      testPPG.println(fulldataR);
+//      testPPG.print(fulldata);
+//      testPPG.print(",");
+//      testPPG.println(fulldataR);
       dataReady = false;
-      i++;
+//      i++;
     }
     if (i == 2000){
       testPPG.close();

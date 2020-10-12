@@ -11,7 +11,7 @@ void setup() {
   float var3 = 3;
   Serial.begin(115200);
   Serial.println(SD.begin());
-  test = SD.open("/test4.csv",FILE_WRITE);
+  test = SD.open("/testnew.csv",FILE_WRITE);
   if (!test){
     Serial.println("failed");
   }

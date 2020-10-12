@@ -1,7 +1,10 @@
+#include <TinyPICO.h>
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
 #include "SparkFun_MMA8452Q.h"
+
+TinyPICO tp = TinyPICO();
 
 //File ecgFile; //file for ecg data
 File accAFile; //file for abdominal acc data
@@ -204,6 +207,8 @@ void loop() {
       Wire.write(0);
       Wire.endTransmission();
       Serial.println("done");
+      //set LED to Green
+      tp.DotStar_SetPixelColor(0,255,0);
       while(1);
     }
 }
