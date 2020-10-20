@@ -59,6 +59,7 @@ unsigned long i;
 
 void setup() {
   // put your setup code here, to run once:
+  tp.DotStar_Clear();
   dataReady = false;
   newA = false;
   newT = false;
@@ -184,31 +185,36 @@ void loop() {
       testPPG.print(fulldataR);
       testPPG.print(",");
       testPPG.println(fullecg);
-//      Serial.println(fulldata);
+      Serial.println(fulldata);
+//      Serial.println(fullecg);
       dataReady = false;
       
       i++; //increment the counter
     }
     
     //when we've sampled enough (20 sec for now)
-    if (i == 24000){
+    if (i == 4000){            
       //close file
+      long t = millis();
       testPPG.close();
+      SD.open("/testPPGInt.csv",FILE_WRITE);
+      Serial.println(millis() - t);
       accAFile.close();
       accTFile.close();
-      //PPG 1 and 2 on
+      //PPG 1 and 2 off
       Wire.beginTransmission(write_data);
       Wire.write(0x09);
       Wire.write(0);
       Wire.endTransmission();
-      //ECG on
+      //ECG off
       Wire.beginTransmission(write_data);
       Wire.write(0x0A);
       Wire.write(0);
       Wire.endTransmission();
-      Serial.println("done");
+//      Serial.println("done");
       //set LED to Green
       tp.DotStar_SetPixelColor(0,255,0);
+      //hold here
       while(1);
     }
 }
@@ -219,8 +225,6 @@ void setUpECGPPGSensor(){
   Wire.write(0x0D);
   Wire.write(0b00000001);
   Wire.endTransmission();
-  
-  
   //PPG 1 100Hz
   Wire.beginTransmission(write_data);
   Wire.write(0x0E);
@@ -249,7 +253,7 @@ void setUpECGPPGSensor(){
   //gain of 5
   Wire.beginTransmission(write_data);
   Wire.write(0x3E);
-  Wire.write(0b00000000);
+  Wire.write(0b00000100);
   Wire.endTransmission();
   //PPG 1 and 2 on
   Wire.beginTransmission(write_data);
