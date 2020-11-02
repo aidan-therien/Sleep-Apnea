@@ -52,12 +52,13 @@ bool newA;
 //new thoracic accelerometer data available
 bool newT;
 
-bool aligned;
-
 //counter for when we are done sampling
 unsigned long i;
 
-long t;
+unsigned long t;
+unsigned long avgt;
+
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -65,11 +66,9 @@ void setup() {
   dataReady = false;
   newA = false;
   newT = false;
-  aligned = false;
   Serial.begin(115200);
   i = 0;
   Wire.begin();
-  Wire.setClock(400000);
 //  data_in = 0;
   if(!SD.begin()){
     Serial.println("SD Card Initialization Failed");
@@ -80,12 +79,9 @@ void setup() {
   testPPG = SD.open("/testPPGInt.csv",FILE_WRITE);
   accAFile = SD.open("/accADataInt.csv", FILE_WRITE);
   accTFile = SD.open("/accTDataInt.csv", FILE_WRITE);
-  if (!testPPG || !accAFile || !accTFile){
-    Serial.println("File Initialization Failed");
-    while(1);
-  }
+
   
-  setUpECGPPGSensor(); //set parameters for PPG sampling
+
   //set thoracic acc to 50Hz and a range of 2G
   if(!accelT.init(SCALE_2G, ODR_50)){
     Serial.println("Thoracic Accelerometer Initialization Failed");
@@ -98,22 +94,25 @@ void setup() {
     while(1);
   }
   
-  enableFifo();
-  t = millis();;
+  setUpECGPPGSensor(); //set parameters for PPG sampling
+//    Serial.println(millis());
+  t = 0;
+  avgt = 0;
 }
  
 void loop() {
     //check for new ppg data
     Wire.beginTransmission(write_data);
-    Wire.write(0x01);
+    Wire.write(0x00);
     Wire.endTransmission(false);
     Wire.requestFrom(read_data,1);
-
-    //if there is new ecg data
-    if ((Wire.read() & 4) == 4){
+    byte reg0 = Wire.read();
+//    if (reg0 & 128 == 128) Serial.println(i);
+    //if there is new ppg data
+    if ((reg0 & 64) == 64){
       //get new data
-//      if(i==0) t = millis();
-//      if(i==1999) t = millis()-t;
+//      avgt = avgt + (millis()-t);
+//      t = millis();
       Wire.beginTransmission(write_data);
       Wire.write(0x07);
       Wire.endTransmission(false);
@@ -131,6 +130,7 @@ void loop() {
       data_ecg2 = Wire.read();
       data_ecg3 = Wire.read();
       dataReady = true;
+//      i++;
 //      Serial.println(millis()-t);
 //      t = millis();
     }
@@ -180,6 +180,7 @@ void loop() {
       accAFile.print(',');
       accAFile.println(a_data_Z);
       newA = false;
+      i++;
     }
 
     //if new PPG data
@@ -199,34 +200,17 @@ void loop() {
 //      Serial.println(fullecg);
       dataReady = false;
       
-      i++; //increment the counter
+//      i++; //increment the counter
     }
-    //align the data after 1 sec of ecg ppg sampling
-//    if (i == 800 && !aligned){
-//      testPPG.print(0);
-//      testPPG.print(",");
-//      testPPG.print(0);
-//      testPPG.print(",");
-//      testPPG.println(0);
-//      accTFile.print(50);
-//      accTFile.print(",");
-//      accTFile.print(50);
-//      accTFile.print(",");
-//      accTFile.println(50);
-//      accAFile.print(50);
-//      accAFile.print(',');
-//      accAFile.print(50);
-//      accAFile.print(',');
-//      accAFile.println(50);
-//      aligned = true;
-//    }
-    //when we've sampled enough (5 sec for now)
-    if (i == 8000){            
+    
+    //when we've sampled enough (10 sec for now)
+    if (i == 250){            
       //close file
-//      t = millis()-t;
+//      long t = millis();
+//      Serial.println(avgt);
       testPPG.close();
 //      SD.open("/testPPGInt.csv",FILE_WRITE);
-//      Serial.println(t);
+//      Serial.println(millis() - t);
       accAFile.close();
       accTFile.close();
       //PPG 1 and 2 off
@@ -253,20 +237,15 @@ void setUpECGPPGSensor(){
   Wire.write(0x0D);
   Wire.write(0b00000001);
   Wire.endTransmission();
-  //PPG 1 100Hz
+  //PPG 1 400Hz
   Wire.beginTransmission(write_data);
   Wire.write(0x0E);
-  Wire.write(0b10010011);
+  Wire.write(0b10011001);
   Wire.endTransmission();
   //PPG interrupt on
-//  Wire.beginTransmission(write_data);
-//  Wire.write(0x02);
-//  Wire.write(0b01000000);
-//  Wire.endTransmission();
-  //ECG interrupt on
   Wire.beginTransmission(write_data);
-  Wire.write(0x03);
-  Wire.write(0b00000100);
+  Wire.write(0x02);
+  Wire.write(0b01000000);
   Wire.endTransmission();
   //set current of LED1
   Wire.beginTransmission(write_data);
@@ -281,7 +260,7 @@ void setUpECGPPGSensor(){
   //set ECG sampling to 400Hz
   Wire.beginTransmission(write_data);
   Wire.write(0x3C);
-  Wire.write(0b00000010);
+  Wire.write(0b00000111);
   Wire.endTransmission();
   //gain of 5
   Wire.beginTransmission(write_data);
@@ -298,9 +277,6 @@ void setUpECGPPGSensor(){
   Wire.write(0x0A);
   Wire.write(0b00001001);
   Wire.endTransmission();
-  
-}
-void enableFifo(){
   // enable FIFO
   Wire.beginTransmission(write_data);
   Wire.write(0x0D);

@@ -56,8 +56,12 @@ bool aligned;
 
 //counter for when we are done sampling
 unsigned long i;
+long j;
+long k;
 
 long t;
+long t1;
+long t2;
 
 void setup() {
   // put your setup code here, to run once:
@@ -99,7 +103,9 @@ void setup() {
   }
   
   enableFifo();
-  t = millis();;
+  t = millis();
+  j = 0;
+  k = 0;
 }
  
 void loop() {
@@ -112,8 +118,8 @@ void loop() {
     //if there is new ecg data
     if ((Wire.read() & 4) == 4){
       //get new data
-//      if(i==0) t = millis();
-//      if(i==1999) t = millis()-t;
+      if(i==0) t = millis();
+      if(i==1999) t = millis()-t;
       Wire.beginTransmission(write_data);
       Wire.write(0x07);
       Wire.endTransmission(false);
@@ -138,6 +144,9 @@ void loop() {
     //if there is new thoracic acc data available
     if (accelT.available()){
       //get the new data
+      if (j ==0) t1 = millis();
+      if (j == 249) t1 = millis()-t1;
+      j++;
       accelT.read();
       //save the data from each direction
       t_data_X = accelT.cx;
@@ -151,6 +160,9 @@ void loop() {
     //if there is new abdominal acc data available
     if (accelA.available()){
       //get the new data
+      if (k ==0) t2 = millis();
+      if (k == 249) t2 = millis()-t2;
+      k++;
       accelA.read();
       //save the data from each direction
       a_data_X = accelA.cx;
@@ -174,6 +186,7 @@ void loop() {
     //if we have new abdominal acc data to write to the SD card
     if (newA){
       //write three columns in the file x y z
+      
       accAFile.print(a_data_X);
       accAFile.print(',');
       accAFile.print(a_data_Y);
@@ -221,12 +234,14 @@ void loop() {
 //      aligned = true;
 //    }
     //when we've sampled enough (5 sec for now)
-    if (i == 8000){            
+    if (i == 3000){            
       //close file
 //      t = millis()-t;
       testPPG.close();
 //      SD.open("/testPPGInt.csv",FILE_WRITE);
-//      Serial.println(t);
+      Serial.println(t);
+      Serial.println(t2);
+      Serial.println(t1);
       accAFile.close();
       accTFile.close();
       //PPG 1 and 2 off
